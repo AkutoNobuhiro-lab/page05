@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excelグラフ作成の基本</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* =========================================
+           1. BASE STYLING (Responsive Layout)
+        ========================================= */
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            margin: 0;
+            padding: 30px 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .slide {
+            background: #ffffff;
+            border-radius: 32px;
+            box-shadow: 
+                0 25px 50px -12px rgba(15, 23, 42, 0.1),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+            width: 100%;
+            max-width: 960px;
+            min-height: 540px;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: visible;
+            box-sizing: border-box;
+        }
+
+        .slide::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #3b82f6, #2dd4bf);
+            border-radius: 32px 32px 0 0;
+        }
+
+        .slide-title {
+            font-family: 'Poppins', 'Noto Sans JP', sans-serif;
+            font-size: 26px;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-shrink: 0;
+        }
+
+        .slide-title i {
+            color: #3b82f6;
+            background: #f1f5f9;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-size: 20px;
+        }
+
+        .slide-content-grid {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 24px;
+            flex-grow: 1;
+        }
+
+        @media (max-width: 800px) {
+            .slide-content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .info-card {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 20px;
+            border: 1px solid #f1f5f9;
+        }
+
+        .info-card h3 {
+            font-size: 13px;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-card p {
+            font-size: 11.5px;
+            color: #64748b;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .control-panel {
+            background: #ffffff;
+            border: 2px solid #f8fafc;
+            padding: 14px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .panel-label {
+            font-family: 'Poppins', sans-serif;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #94a3b8;
+            margin-bottom: 10px;
+            display: block;
+            font-weight: 700;
+        }
+
+        .mode-btn {
+            width: 100%;
+            padding: 9px 14px;
+            border-radius: 10px;
+            border: 1px solid #f1f5f9;
+            background: #ffffff;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 6px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .mode-btn:last-child { margin-bottom: 0; }
+
+        .mode-btn:hover {
+            background: #f1f5f9;
+            transform: translateX(4px);
+        }
+
+        .mode-btn.active {
+            background: #1e293b;
+            color: #ffffff;
+            border-color: #1e293b;
+        }
+
+        .chart-wrapper {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 24px;
+            border: 1px solid #f1f5f9;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.02);
+            min-height: 320px;
+            position: relative;
+        }
+
+        .steps-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .steps-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .step-card {
+            background: #ffffff;
+            border: 1px solid #f1f5f9;
+            border-radius: 24px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .step-badge {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            font-size: 10px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 14px;
+            width: fit-content;
+        }
+
+        .badge-blue { background: #eff6ff; color: #2563eb; }
+        .badge-emerald { background: #ecfdf5; color: #059669; }
+        .badge-orange { background: #fff7ed; color: #d97706; }
+
+        .step-card h3 {
+            font-size: 17px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 12px;
+        }
+
+        .step-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .step-list li {
+            font-size: 12.5px;
+            color: #475569;
+            margin-bottom: 10px;
+            padding-left: 20px;
+            position: relative;
+            line-height: 1.5;
+        }
+
+        .step-list li::before {
+            content: "\f058";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: #3b82f6;
+            font-size: 11px;
+        }
+
+        .footer-banner {
+            margin-top: auto;
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 16px 24px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-weight: 500;
+            font-size: 13.5px;
+            line-height: 1.4;
+        }
+
+        .footer-banner i {
+            color: #2dd4bf;
+            font-size: 18px;
+        }
+
+        /* Table Styling */
+        .table-wrapper {
+            background: #ffffff;
+            border-radius: 24px;
+            border: 1px solid #f1f5f9;
+            overflow: hidden;
+            flex-grow: 1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #1e293b;
+            font-weight: 700;
+            padding: 12px;
+            text-align: center;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        /* Blind functionality for Header Labels in Slide 1 */
+        .blind-label {
+            background-color: #1e293b; /* Dark blind color */
+            color: transparent !important;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .blind-label:hover {
+            background-color: transparent;
+            color: inherit !important;
+        }
+
+        td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #f1f5f9;
+            color: #475569;
+        }
+
+        tr:nth-child(even) {
+            background-color: #fbfcfd;
+        }
+
+        .avg-row {
+            background: #fff1f2 !important;
+            font-weight: 700;
+            border-top: 2px solid #fecaca;
+        }
+
+        .avg-row td {
+            color: #e11d48;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Slide 1 -->
+    <div class="slide" id="section1">
+        <div class="slide-title">
+            <i class="fa-solid fa-table"></i>
+            <span>1. データ一覧（どのようなデータだと思いますか？）</span>
+        </div>
+        
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 30%;">データ</th>
+                        <th style="width: 35%;"><span class="blind-label">体重 (kg)</span></th>
+                        <th style="width: 35%;"><span class="blind-label">身長 (cm)</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>A</td><td>73</td><td>180</td></tr>
+                    <tr><td>B</td><td>61</td><td>162</td></tr>
+                    <tr><td>C</td><td>54</td><td>155</td></tr>
+                    <tr><td>D</td><td>65</td><td>173</td></tr>
+                    <tr><td>E</td><td>58</td><td>165</td></tr>
+                    <tr><td>F</td><td>75</td><td>185</td></tr>
+                    <tr><td>G</td><td>60</td><td>159</td></tr>
+                    <tr><td>H</td><td>64</td><td>169</td></tr>
+                    <tr><td>I</td><td>66</td><td>179</td></tr>
+                    <tr><td>J</td><td>68</td><td>177</td></tr>
+                    <tr class="avg-row">
+                        <td>平均値</td>
+                        <td>64.4</td>
+                        <td>170.4</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="footer-banner" style="margin-top: 20px;">
+            <i class="fa-solid fa-database"></i>
+            <span>集計された数値データをもとにグラフを作成することで、データの傾向が視覚的に明確になります。</span>
+        </div>
+    </div>
+
+    <!-- Slide 2 -->
+    <div class="slide" id="section2">
+        <div class="slide-title">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>2. グラフの本質と作成例</span>
+        </div>
+        
+        <div class="slide-content-grid">
+            <div class="sidebar">
+                <div class="info-card">
+                    <h3><i class="fa-solid fa-tag"></i> ラベルと単位</h3>
+                    <p>ラベルがない数値はただの記号です。単位を添えて意味を持たせましょう。</p>
+                </div>
+                <div class="info-card">
+                    <h3><i class="fa-solid fa-expand"></i> 軸の最適化と視認性の向上</h3>
+                    <p>データの変動が最も分かりやすい範囲に軸を設定することが重要です。また、視認性の高い配色にすることで分かりやすいグラフになります。</p>
+                </div>
+
+                <div class="control-panel">
+                    <span class="panel-label">サンプルグラフ</span>
+                    <button onclick="setMode('bad', this)" class="mode-btn">① NG例（ラベルなし）</button>
+                    <button onclick="setMode('color-bad', this)" class="mode-btn">② NG例（配色）</button>
+                    <button onclick="setMode('wide', this)" class="mode-btn">③ NG例（軸レンジ）</button>
+                    <button onclick="setMode('good', this)" class="mode-btn">④ 適切（ラベルと範囲の最適化）</button>
+                    <button onclick="setMode('perfect', this)" class="mode-btn">⑤ 適切（強調と凡例付き）</button>
+                </div>
+            </div>
+
+            <div class="chart-wrapper">
+                <canvas id="liveChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 3 -->
+    <div class="slide" id="section3">
+        <div class="slide-title">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span>3. 第3者が見ても伝わるグラフ</span>
+        </div>
+
+        <div class="steps-container">
+            <div class="step-card">
+                <span class="step-badge badge-blue">STEP 1</span>
+                <h3>データのグラフ化</h3>
+                <ul class="step-list">
+                    <li><strong>範囲選択:</strong> 項目名を含めて正しく選択。</li>
+                    <li><strong>図表の挿入:</strong> データの性質に合う型を選択。</li>
+                    <li><strong>軸の定義:</strong> 単位を明記し、読み手を迷わせない。</li>
+                </ul>
+            </div>
+
+            <div class="step-card">
+                <span class="step-badge badge-emerald">STEP 2</span>
+                <h3>視認性の向上</h3>
+                <ul class="step-list">
+                    <li><strong>凡例の追加:</strong> プロットデータが何を示すのかを指示。</li>
+                    <li><strong>軸のスケール調整:</strong> 無駄な余白を削り変化を強調。</li>
+                    <li><strong>色の意味付け:</strong> 重要箇所を目立たせる。</li>
+                </ul>
+            </div>
+
+            <div class="step-card">
+                <span class="step-badge badge-orange">STEP 3</span>
+                <h3>傾向の主張</h3>
+                <ul class="step-list">
+                    <li><strong>データの注釈:</strong> 特異点や平均に補助線を追加。</li>
+                    <li><strong>透明度の活用:</strong> 重なりを可視化して分布を示す。</li>
+                    <li><strong>傾向の表示:</strong> 近似線で傾向を予測。</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-banner">
+            <i class="fa-solid fa-lightbulb"></i>
+            <span>「デフォルトのグラフ」ではなく「体裁を整えて傾向を伝えたいグラフ」を目指しましょう。</span>
+        </div>
+    </div>
+
+    <script>
+        let chart;
+        let showAnnotations = false;
+
+        const rawData = [
+            { x: 73, y: 180 }, { x: 61, y: 162 }, { x: 54, y: 155 },
+            { x: 65, y: 173 }, { x: 58, y: 165 }, { x: 75, y: 185 },
+            { x: 60, y: 159 }, { x: 64, y: 169 }, { x: 66, y: 179 },
+            { x: 68, y: 177 }
+        ];
+        const avgData = [{ x: 64.4, y: 170.4 }];
+
+        const annotationPlugin = {
+            id: 'annotationPlugin',
+            afterDraw(chart) {
+                if (!showAnnotations) return;
+                const { ctx, scales: { x, y } } = chart;
+                ctx.save();
+
+                // 1. Draw A-J individual labels
+                ctx.font = 'bold 12px Poppins, sans-serif';
+                ctx.fillStyle = '#475569';
+                ctx.strokeStyle = '#94a3b8';
+                ctx.lineWidth = 1;
+
+                rawData.forEach((point, index) => {
+                    const px = x.getPixelForValue(point.x);
+                    const py = y.getPixelForValue(point.y);
+                    const label = String.fromCharCode(65 + index);
+                    const lineLen = 22;
+                    const tx = px - lineLen; 
+                    const ty = py;
+
+                    ctx.beginPath();
+                    ctx.moveTo(px - 5, py);
+                    ctx.lineTo(tx, ty);
+                    ctx.stroke();
+
+                    const textMetrics = ctx.measureText(label);
+                    ctx.fillText(label, tx - textMetrics.width - 4, ty + 4); 
+                });
+
+                // 2. Draw specific callouts
+                const callouts = [
+                    { data: avgData[0], text: '平均', color: '#ff0000', offsetX: 40, offsetY: 45 }
+                ];
+                
+                callouts.forEach(anno => {
+                    const px = x.getPixelForValue(anno.data.x);
+                    const py = y.getPixelForValue(anno.data.y);
+                    ctx.font = 'bold 12px Noto Sans JP';
+                    const textWidth = ctx.measureText(anno.text).width;
+                    const padding = 6;
+                    const boxX = px + anno.offsetX;
+                    const boxY = py + anno.offsetY;
+                    
+                    ctx.fillStyle = 'white';
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = 'rgba(0,0,0,0.1)';
+                    ctx.beginPath();
+                    ctx.roundRect(boxX, boxY - 10, textWidth + padding * 2, 20, 6);
+                    ctx.fill();
+                    
+                    ctx.shadowBlur = 0;
+                    ctx.strokeStyle = anno.color;
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+
+                    ctx.fillStyle = anno.color;
+                    ctx.fillText(anno.text, boxX + padding, boxY + 4);
+
+                    ctx.beginPath();
+                    ctx.setLineDash([3, 3]);
+                    ctx.moveTo(px, py);
+                    ctx.lineTo(boxX, boxY);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                });
+                ctx.restore();
+            }
+        };
+
+        function initChart() {
+            const ctx = document.getElementById('liveChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        { 
+                            label: '個人データ', 
+                            data: rawData, 
+                            backgroundColor: 'transparent', 
+                            borderColor: '#000000', 
+                            borderWidth: 1.5, 
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        },
+                        { 
+                            label: '平均', 
+                            data: avgData, 
+                            backgroundColor: 'transparent', 
+                            borderColor: '#ff0000', 
+                            borderWidth: 2, 
+                            pointRadius: 8,
+                            pointStyle: 'circle'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: { padding: { top: 20, right: 30, bottom: 10, left: 50 } },
+                    scales: {
+                        x: { 
+                            title: { 
+                                display: true, 
+                                text: '体重 (kg)', 
+                                font: { family: 'Noto Sans JP', size: 16, weight: 'bold' }, 
+                                color: '#000000' 
+                            }, 
+                            min: 30, max: 100,
+                            grid: { color: '#f1f5f9' },
+                            ticks: { font: { family: 'Poppins', size: 13, weight: 'bold' }, color: '#000000' }
+                        },
+                        y: { 
+                            title: { 
+                                display: true, 
+                                text: '身長 (cm)', 
+                                font: { family: 'Noto Sans JP', size: 16, weight: 'bold' }, 
+                                color: '#000000' 
+                            }, 
+                            min: 140, max: 200,
+                            grid: { color: '#f1f5f9' },
+                            ticks: { font: { family: 'Poppins', size: 13, weight: 'bold' }, color: '#000000' }
+                        }
+                    },
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: { enabled: true }
+                    }
+                },
+                plugins: [annotationPlugin]
+            });
+            // 初期状態を「① 未完成（ラベルなし）」に設定
+            setMode('bad', document.querySelectorAll('.mode-btn')[0]);
+        }
+
+        function setMode(mode, btn) {
+            if (!chart) return;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            showAnnotations = false;
+            
+            // Reset to Default
+            chart.options.scales.x.title.display = true;
+            chart.options.scales.y.title.display = true;
+            chart.data.datasets[0].borderColor = '#000000';
+            chart.data.datasets[1].hidden = true;
+            chart.options.scales.x.min = 30; chart.options.scales.x.max = 100;
+            chart.options.scales.y.min = 140; chart.options.scales.y.max = 200;
+
+            if (mode === 'bad') {
+                chart.options.scales.x.title.display = false;
+                chart.options.scales.y.title.display = false;
+            } else if (mode === 'color-bad') {
+                chart.data.datasets[0].borderColor = '#ffff00'; 
+            } else if (mode === 'wide') {
+                chart.options.scales.x.min = 0; chart.options.scales.x.max = 300;
+                chart.options.scales.y.min = 0; chart.options.scales.y.max = 400;
+            } else if (mode === 'perfect') {
+                chart.data.datasets[1].hidden = false;
+                showAnnotations = true;
+            }
+            chart.update();
+        }
+
+        window.onload = initChart;
+    </script>
+</body>
+</html>
